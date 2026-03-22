@@ -2,12 +2,9 @@ import pandas as pd
 import numpy as np
 
 def es_dicotomico(df):
-    # Ignorar la columna ID si está presente
     items = df.drop(columns=['ID']) if 'ID' in df.columns else df
-    # Obtener valores únicos ignorando nulos
     valores = pd.unique(items.values.ravel())
     valores = [v for v in valores if pd.notna(v)]
-    # Es dicotómico si el conjunto de valores es un subconjunto de {0, 1}
     return set(valores).issubset({0, 1})
 
 def limpiar_datos(df, metodo="Eliminar sujeto"):
@@ -43,3 +40,8 @@ def calcular_fiabilidad_mitades(df, metodo='spearman_brown'):
         var_total = (m1 + m2).var(ddof=1)
         return 1 - (var_diff / var_total) if var_total != 0 else 0
     return 0
+
+def preparar_datos_grafico(df):
+    # El ID debe ser el índice para que las líneas se identifiquen por sujeto
+    df_graf = df.set_index('ID').apply(pd.to_numeric)
+    return df_graf
