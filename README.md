@@ -7,7 +7,8 @@
 * **Detección Automática de Ítems:** Identifica si los datos son dicotómicos (0/1) o de escala (Likert), adaptando el nombre del coeficiente a **KR-20** o **Alfa de Cronbach** respectivamente.
 * **Gestión de Nulos Inteligente:** Permite elegir entre la eliminación de sujetos (listwise deletion) o la sustitución por error (0), asegurando la integridad de la matriz de datos.
 * **Ordenación por Dificultad ($p$):** Antes de cualquier cálculo, el motor reordena sistemáticamente los ítems según su índice de dificultad. Esto optimiza la creación de formas paralelas y estabiliza los coeficientes de mitades.
-* **Análisis Visual Dinámico:** * **Trayectoria de Sujetos:** Visualización individual del patrón de respuesta de un sujeto a través de los ítems ordenados.
+* **Análisis Visual Dinámico:
+    ** * **Trayectoria de Sujetos:** Visualización individual del patrón de respuesta de un sujeto a través de los ítems ordenados.
     * **Rendimiento de Ítems:** Gráficos de línea para analizar el comportamiento de una sola variable a través de toda la muestra.
 * **Múltiples Métricas de Fiabilidad:**
     * **Alfa de Cronbach / KR-20:** Consistencia interna basada en la covarianza de los ítems.
