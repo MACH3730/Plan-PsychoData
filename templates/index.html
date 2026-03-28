@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Plan PsychoData | Marcos Rock</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <div class="brand">
+                <h1>Plan PsychoData 🧠</h1>
+                <p style="color:#6b7280; margin:0;">Rigor Metodológico en Psicometría (TCT)</p>
+            </div>
+            <div class="author card" style="padding:15px; border-radius:12px; text-align:right; font-size:0.85rem;">
+                Desarrollado por <strong>Marcos Rock</strong><br>
+                <a href="mailto:marcosrock.dev@proton.me" style="color:#3b82f6; text-decoration:none;">marcosrock.dev@proton.me</a>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <div class="side-panel">
+                <div class="card">
+                    <h3>⚙️ Configuración</h3>
+                    <input type="file" id="fileInput" accept=".csv" style="display:none">
+                    <label for="fileInput" class="btn-upload" id="fileLabel" style="width:100%; box-sizing:border-box; display:block; cursor:pointer; text-align:center; padding:15px; background:var(--bg); border-radius:12px; box-shadow: 4px 4px 8px #a3b1c6, -4px -4px 8px #ffffff; color:#3b82f6; font-weight:bold;">
+                        Cargar Archivo CSV
+                    </label>
+
+                    <div style="margin-top:25px">
+                        <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:5px;">Gestión de Nulos:</label>
+                        <select id="opcion_nulos">
+                            <option value="Sustituir por 0">Sustituir por 0</option>
+                            <option value="Eliminar sujeto">Eliminar sujeto</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-top:20px">
+                        <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:5px;">Fórmula de Mitades:</label>
+                        <select id="metodo_mitades">
+                            <option value="spearman_brown">Spearman-Brown</option>
+                            <option value="rulon">Rulon</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-panel">
+                <div class="card" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; text-align:center;">
+                    <div>
+                        <span style="font-size:0.75rem; color:#6b7280; font-weight:800; text-transform:uppercase;">Consistencia Interna (Alfa)</span>
+                        <h2 id="res-alfa" style="font-size:3rem; color:#3b82f6; margin:10px 0;">--.----</h2>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:#6b7280; font-weight:800; text-transform:uppercase;">Fiabilidad Mitades</span>
+                        <h2 id="res-mitades" style="font-size:3rem; color:#3b82f6; margin:10px 0;">--.----</h2>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div style="display:flex; gap:10px; margin-bottom:15px;">
+                        <select id="selector-tipo" style="width:auto"><option value="sujeto">ID Sujeto</option><option value="item">Ítem (V)</option></select>
+                        <select id="selector-dato" style="width:auto"><option>-- Seleccionar --</option></select>
+                    </div>
+                    <canvas id="mainChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-container">
+            <div class="card info-box" style="border-left: 5px solid #3b82f6;">
+                <h4>⚖️ Rigurosos Requisitos</h4>
+                <ul>
+                    <li>Uso de cuasivariancia \( (n-1) \) para estimadores insesgados.</li>
+                    <li>Ordenación automática por índice de dificultad \( p \).</li>
+                    <li>Garantía de paridad estadística en la división.</li>
+                </ul>
+            </div>
+            <div class="card info-box" style="border-left: 5px solid #3b82f6;">
+                <h4>🧪 Especificaciones de Cálculo</h4>
+                <ul>
+                    <li>Partición pares/impares tras la ordenación jerárquica.</li>
+                    <li>Consistencia interna bajo el supuesto de tau-equivalencia.</li>
+                    <li>Soporte para escalamiento binario y métrico continuo.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let globalData = null;
+        let myChart = null;
+
+        async function analizar() {
+            const file = document.getElementById('fileInput').files[0];
+            if(!file) return;
+            
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('metodo_mitades', document.getElementById('metodo_mitades').value);
+            fd.append('opcion_nulos', document.getElementById('opcion_nulos').value);
+
+            const res = await fetch('/analizar', { method: 'POST', body: fd });
+            globalData = await res.json();
+            
+            document.getElementById('res-alfa').innerText = globalData.alfa;
+            document.getElementById('res-mitades').innerText = globalData.mitades;
+            
+            actualizarSelector();
+        }
+
+        document.getElementById('fileInput').onchange = analizar;
+        document.getElementById('opcion_nulos').onchange = analizar;
+        document.getElementById('metodo_mitades').onchange = analizar;
+
+        function actualizarSelector() {
+            const tipo = document.getElementById('selector-tipo').value;
+            const select = document.getElementById('selector-dato');
+            select.innerHTML = '';
+            const lista = tipo === 'sujeto' ? globalData.ids : globalData.items;
+            lista.forEach(id => {
+                let opt = document.createElement('option');
+                opt.value = id; opt.innerText = id;
+                select.appendChild(opt);
+            });
+            dibujar();
+        }
+
+        function dibujar() {
+            const tipo = document.getElementById('selector-tipo').value;
+            const val = document.getElementById('selector-dato').value;
+            if(!val || !globalData) return;
+
+            let labels = tipo === 'sujeto' ? globalData.items : globalData.ids;
+            let values = tipo === 'sujeto' ? globalData.items.map(it => globalData.matriz[it][globalData.ids.indexOf(val)]) : globalData.matriz[val];
+
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: val, data: values, borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }]
+                }
+            });
+        }
+        document.getElementById('selector-tipo').onchange = actualizarSelector;
+        document.getElementById('selector-dato').onchange = dibujar;
+    </script>
+</body>
+</html>

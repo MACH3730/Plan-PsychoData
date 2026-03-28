@@ -1,0 +1,109 @@
+:root {
+    --bg: #e0e5ec;
+    --text: #374151;
+    --accent: #3b82f6;
+    --shadow-light: #ffffff;
+    --shadow-dark: #a3b1c6;
+}
+
+body {
+    background-color: var(--bg);
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text);
+    margin: 0;
+    padding: 30px;
+}
+
+.dashboard {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    margin-bottom: 40px;
+    border-bottom: 2px solid var(--shadow-dark);
+}
+
+.brand h1 { margin: 0; font-size: 2.2rem; color: #1e3a8a; letter-spacing: -1px; }
+
+.card {
+    background: var(--bg);
+    border-radius: 20px;
+    box-shadow: 8px 8px 15px var(--shadow-dark), -8px -8px 15px var(--shadow-light);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+}
+
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+h3 {
+    font-size: 1rem;
+    color: #1e3a8a;
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+select, input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    background: #e6ebf1;
+    border: 1px solid #d1d9e6;
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.btn-upload {
+    background: var(--bg);
+    border: none;
+    border-radius: 12px;
+    box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+    color: var(--accent);
+    padding: 15px 25px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-block;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.btn-upload:active {
+    box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+    transform: scale(0.98);
+}
+
+.info-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.info-box {
+    padding: 20px;
+    border-radius: 15px;
+    border-left: 5px solid var(--accent);
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.info-box ul { list-style: none; padding: 0; font-size: 0.9rem; }
+.info-box li { margin-bottom: 10px; padding-left: 20px; position: relative; }
+.info-box li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: bold; }

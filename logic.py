@@ -1,47 +1,45 @@
 import pandas as pd
 import numpy as np
 
-def es_dicotomico(df):
-    items = df.drop(columns=['ID']) if 'ID' in df.columns else df
-    valores = pd.unique(items.values.ravel())
-    valores = [v for v in valores if pd.notna(v)]
-    return set(valores).issubset({0, 1})
+def procesar_psicometria(df, metodo, nulos_opcion):
+    # 1. GESTIÓN DE NULOS
+    if nulos_opcion == "Eliminar sujeto":
+        df = df.dropna().copy()
+    else:
+        df = df.fillna(0).copy()
 
-def limpiar_datos(df, metodo="Eliminar sujeto"):
-    df = df.replace(r'^\s*$', np.nan, regex=True)
-    if metodo == "Eliminar sujeto":
-        return df.dropna().reset_index(drop=True)
-    return df.fillna(0)
+    # Identificamos columna de ID (primera) e ítems (resto)
+    id_col = df.columns[0]
+    items_df = df.iloc[:, 1:]
 
-def procesar_y_ordenar_items(df):
-    id_col = df['ID'].reset_index(drop=True)
-    items = df.drop(columns=['ID']).apply(pd.to_numeric).reset_index(drop=True)
-    p = items.mean().sort_values()
-    items_ordenados = items[p.index]
-    return pd.concat([id_col, items_ordenados], axis=1)
+    # 2. ALFA DE CRONBACH
+    n_items = items_df.shape[1]
+    varianzas_items = items_df.var(ddof=1).sum()
+    varianza_total = items_df.sum(axis=1).var(ddof=1)
+    
+    if varianza_total == 0:
+        alfa = 0.0
+    else:
+        alfa = (n_items / (n_items - 1)) * (1 - (varianzas_items / varianza_total))
 
-def calcular_alfa_cronbach(df):
-    items = df.drop(columns=['ID']).apply(pd.to_numeric)
-    k = items.shape[1]
-    sum_var_items = items.var(ddof=1).sum()
-    var_total = items.sum(axis=1).var(ddof=1)
-    if var_total == 0 or k <= 1: return 0
-    return (k / (k - 1)) * (1 - (sum_var_items / var_total))
+    # 3. FIABILIDAD POR DOS MITADES (Pares vs Impares)
+    mitad_1 = items_df.iloc[:, 0::2].sum(axis=1)
+    mitad_2 = items_df.iloc[:, 1::2].sum(axis=1)
+    
+    r_12 = np.corrcoef(mitad_1, mitad_2)[0, 1]
 
-def calcular_fiabilidad_mitades(df, metodo='spearman_brown'):
-    items = df.drop(columns=['ID']).apply(pd.to_numeric)
-    m1 = items.iloc[:, 0::2].sum(axis=1)
-    m2 = items.iloc[:, 1::2].sum(axis=1)
-    if metodo == 'spearman_brown':
-        r = np.corrcoef(m1, m2)[0, 1]
-        return (2 * r) / (1 + r) if (1 + r) != 0 else 0
-    elif metodo == 'rulon':
-        var_diff = (m1 - m2).var(ddof=1)
-        var_total = (m1 + m2).var(ddof=1)
-        return 1 - (var_diff / var_total) if var_total != 0 else 0
-    return 0
+    if metodo == "rulon":
+        # Fórmula de Rulon: 1 - (Varianza de las diferencias / Varianza total)
+        diferencias = mitad_1 - mitad_2
+        fiabilidad_mitades = 1 - (diferencias.var(ddof=1) / items_df.sum(axis=1).var(ddof=1))
+    else:
+        # Spearman-Brown
+        fiabilidad_mitades = (2 * r_12) / (1 + r_12)
 
-def preparar_datos_grafico(df):
-    # El ID debe ser el índice para que las líneas se identifiquen por sujeto
-    df_graf = df.set_index('ID').apply(pd.to_numeric)
-    return df_graf
+    return {
+        "alfa": f"{max(0, alfa):.4f}",
+        "mitades": f"{max(0, fiabilidad_mitades):.4f}",
+        "ids": df[id_col].astype(str).tolist(),
+        "items": items_df.columns.tolist(),
+        "matriz": items_df.to_dict(orient='list')
+    }
