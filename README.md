@@ -14,13 +14,15 @@
     * **Alfa de Cronbach / KR-20:** Consistencia interna basada en la covarianza de los ítems.
     * **Spearman-Brown:** Estimación de fiabilidad por división de mitades.
     * **Rulon:** Método robusto basado en la varianza de las diferencias entre mitades.
+    * **Guttman-Flanagan:** Fiabilidad usando el sumatorio de las varianzas de las mitades.
 
 ## 🛠️ Tecnologías Utilizadas
 
 * **Python 3.12+**
-* **Streamlit:** Interfaz de usuario interactiva y web-based.
+* **Flask:** Framework backend para la gestión de rutas y lógica de servidor.
+* **Chart.js:** Renderizado de gráficos dinámicos en el frontend.
 * **Pandas & NumPy:** Procesamiento de matrices y cálculo de cuasivarianzas de alta precisión.
-* **UV:** Gestor de paquetes de última generación.
+* **UV:** Gestor de paquetes de última generación para un entorno determinista.
 
 ## 📋 Estructura del CSV de Entrada
 
@@ -37,8 +39,9 @@ Para un correcto funcionamiento, el archivo CSV debe cumplir con:
     ```
 2.  Ejecuta la aplicación con `uv`:
     ```bash
-    uv run streamlit run app.py
+    uv run python app.py
     ```
+3.  Accede a la interfaz desde tu navegador en http://127.0.0.1:5000.
 
 ## ⚖️ Metodología y Rigor
 
