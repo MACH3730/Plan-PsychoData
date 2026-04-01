@@ -67,7 +67,9 @@
                         <select id="selector-tipo" style="width:auto"><option value="sujeto">ID Sujeto</option><option value="item">Ítem (V)</option></select>
                         <select id="selector-dato" style="width:auto"><option>-- Seleccionar --</option></select>
                     </div>
-                    <canvas id="mainChart" height="120"></canvas>
+                    <div style="position: relative; height:300px; width:100%;">
+                        <canvas id="mainChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -115,11 +117,9 @@
                     return;
                 }
 
-                // Actualizar números
                 document.getElementById('res-alfa').innerText = globalData.alfa;
                 document.getElementById('res-mitades').innerText = globalData.mitades;
                 
-                // Actualizar etiqueta según método
                 const metodoLabel = document.getElementById('metodo_mitades').options[document.getElementById('metodo_mitades').selectedIndex].text;
                 document.getElementById('label-mitades').innerText = "Fiabilidad (" + metodoLabel + ")";
                 
@@ -165,21 +165,56 @@
 
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(myChart) myChart.destroy();
+
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{ 
-                        label: 'Puntuaciones: ' + val, 
+                        label: 'Valor: ' + val, 
                         data: values, 
                         borderColor: '#3b82f6', 
-                        tension: 0.3, 
+                        borderWidth: 3,
+                        tension: 0.35, 
                         fill: true, 
-                        backgroundColor: 'rgba(59,130,246,0.1)' 
+                        backgroundColor: 'rgba(59,130,246,0.15)',
+                        pointBackgroundColor: '#3b82f6',
+                        pointRadius: 4,
+                        pointHoverRadius: 8,
+                        pointHoverBorderColor: 'white',
+                        pointHoverBorderWidth: 2
                     }]
                 },
                 options: {
-                    scales: { y: { beginAtZero: true } }
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false, // Permite que el tooltip aparezca al pasar por la vertical del punto
+                    },
+                    plugins: {
+                        legend: { display: false }, // Limpiamos la leyenda para que se vea más profesional
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#1e293b',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            cornerRadius: 8,
+                            displayColors: false
+                        }
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5], color: '#e5e7eb' },
+                            ticks: { font: { family: 'Inter' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter' } }
+                        }
+                    }
                 }
             });
         }
