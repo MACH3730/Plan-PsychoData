@@ -26,7 +26,7 @@
             <div class="side-panel">
                 <div class="card">
                     <h3>⚙️ Configuración</h3>
-                    <input type="file" id="fileInput" accept=".csv" style="display:none">
+                    <input type="file" name="file" id="fileInput" accept=".csv" style="display:none">
                     <label for="fileInput" class="btn-upload" id="fileLabel" style="width:100%; box-sizing:border-box; display:block; cursor:pointer; text-align:center; padding:15px; background:var(--bg); border-radius:12px; box-shadow: 4px 4px 8px #a3b1c6, -4px -4px 8px #ffffff; color:#3b82f6; font-weight:bold;">
                         Cargar Archivo CSV
                     </label>
@@ -44,6 +44,7 @@
                         <select id="metodo_mitades">
                             <option value="spearman_brown">Spearman-Brown</option>
                             <option value="rulon">Rulon</option>
+                            <option value="guttman">Guttman-Flanagan</option>
                         </select>
                     </div>
                 </div>
@@ -56,7 +57,7 @@
                         <h2 id="res-alfa" style="font-size:3rem; color:#3b82f6; margin:10px 0;">--.----</h2>
                     </div>
                     <div>
-                        <span style="font-size:0.75rem; color:#6b7280; font-weight:800; text-transform:uppercase;">Fiabilidad Mitades</span>
+                        <span id="label-mitades" style="font-size:0.75rem; color:#6b7280; font-weight:800; text-transform:uppercase;">Fiabilidad Mitades</span>
                         <h2 id="res-mitades" style="font-size:3rem; color:#3b82f6; margin:10px 0;">--.----</h2>
                     </div>
                 </div>
@@ -76,16 +77,16 @@
                 <h4>⚖️ Rigurosos Requisitos</h4>
                 <ul>
                     <li>Uso de cuasivariancia \( (n-1) \) para estimadores insesgados.</li>
-                    <li>Ordenación automática por índice de dificultad \( p \).</li>
+                    <li>Soporte para Spearman, Rulon y Guttman-Flanagan.</li>
                     <li>Garantía de paridad estadística en la división.</li>
                 </ul>
             </div>
             <div class="card info-box" style="border-left: 5px solid #3b82f6;">
                 <h4>🧪 Especificaciones de Cálculo</h4>
                 <ul>
-                    <li>Partición pares/impares tras la ordenación jerárquica.</li>
-                    <li>Consistencia interna bajo el supuesto de tau-equivalencia.</li>
-                    <li>Soporte para escalamiento binario y métrico continuo.</li>
+                    <li>Partición pares/impares tras la carga de datos.</li>
+                    <li>Cálculo en tiempo real según selección de parámetros.</li>
+                    <li>Visualización dinámica de perfiles de respuesta.</li>
                 </ul>
             </div>
         </div>
@@ -96,7 +97,8 @@
         let myChart = null;
 
         async function analizar() {
-            const file = document.getElementById('fileInput').files[0];
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
             if(!file) return;
             
             const fd = new FormData();
@@ -104,13 +106,27 @@
             fd.append('metodo_mitades', document.getElementById('metodo_mitades').value);
             fd.append('opcion_nulos', document.getElementById('opcion_nulos').value);
 
-            const res = await fetch('/analizar', { method: 'POST', body: fd });
-            globalData = await res.json();
-            
-            document.getElementById('res-alfa').innerText = globalData.alfa;
-            document.getElementById('res-mitades').innerText = globalData.mitades;
-            
-            actualizarSelector();
+            try {
+                const res = await fetch('/analizar', { method: 'POST', body: fd });
+                globalData = await res.json();
+                
+                if(globalData.error) {
+                    alert("Error: " + globalData.error);
+                    return;
+                }
+
+                // Actualizar números
+                document.getElementById('res-alfa').innerText = globalData.alfa;
+                document.getElementById('res-mitades').innerText = globalData.mitades;
+                
+                // Actualizar etiqueta según método
+                const metodoLabel = document.getElementById('metodo_mitades').options[document.getElementById('metodo_mitades').selectedIndex].text;
+                document.getElementById('label-mitades').innerText = "Fiabilidad (" + metodoLabel + ")";
+                
+                actualizarSelector();
+            } catch (err) {
+                console.error("Fallo en la petición:", err);
+            }
         }
 
         document.getElementById('fileInput').onchange = analizar;
@@ -118,9 +134,11 @@
         document.getElementById('metodo_mitades').onchange = analizar;
 
         function actualizarSelector() {
+            if(!globalData) return;
             const tipo = document.getElementById('selector-tipo').value;
             const select = document.getElementById('selector-dato');
             select.innerHTML = '';
+            
             const lista = tipo === 'sujeto' ? globalData.ids : globalData.items;
             lista.forEach(id => {
                 let opt = document.createElement('option');
@@ -136,7 +154,14 @@
             if(!val || !globalData) return;
 
             let labels = tipo === 'sujeto' ? globalData.items : globalData.ids;
-            let values = tipo === 'sujeto' ? globalData.items.map(it => globalData.matriz[it][globalData.ids.indexOf(val)]) : globalData.matriz[val];
+            let values;
+            
+            if(tipo === 'sujeto') {
+                const idx = globalData.ids.indexOf(val);
+                values = globalData.items.map(it => globalData.matriz[it][idx]);
+            } else {
+                values = globalData.matriz[val];
+            }
 
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(myChart) myChart.destroy();
@@ -144,7 +169,17 @@
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{ label: val, data: values, borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }]
+                    datasets: [{ 
+                        label: 'Puntuaciones: ' + val, 
+                        data: values, 
+                        borderColor: '#3b82f6', 
+                        tension: 0.3, 
+                        fill: true, 
+                        backgroundColor: 'rgba(59,130,246,0.1)' 
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         }
